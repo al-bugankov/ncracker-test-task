@@ -1,6 +1,9 @@
-<script setup lang="ts">
+<script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useFilmInfoStore } from '@/modules/film-info/stores/filmInfoStore'
 import LoaderSpinner from '@/modules/feedback/components/LoaderSpinner.vue'
+
 
 defineProps({
   movie: {
@@ -9,7 +12,31 @@ defineProps({
   }
 });
 
+const filmInfoStore = useFilmInfoStore();
+const router = useRouter()
+
 const loading = ref(true);
+
+const formatDuration = (duration) => {
+  const minutesMatch = duration.match(/(\d+)\s*мин\./); // Поиск "X мин."
+  const fullMatch = duration.match(/(\d+)\s*мин\.\s*\/\s*(\d{2}:\d{2})/); // Поиск "X мин. / HH:MM"
+
+  if (fullMatch) {
+    return `${fullMatch[1]} мин / ${fullMatch[2]}:00`;
+  }
+
+  if (minutesMatch) {
+    const minutes = minutesMatch[1].padStart(2, '0');
+    return `${minutes} мин / 00:${minutes}:00`;
+  }
+
+  return duration;
+};
+
+const moveToFilm = (movie) => {
+  filmInfoStore.setFilmData(movie);
+  router.push(`/movies/${movie.id}`);
+};
 </script>
 
 <template>
@@ -27,11 +54,17 @@ const loading = ref(true);
     </div>
     <div class="movie-card__details">
       <div class="movie-card__description">
-        <div v-if="movie.collapse.duration" class="movie-card__duration">{{ movie.collapse.duration[0].replace('.', ':') + ':00' }}</div>
-        <div class="movie-card__title">{{ movie.title }}</div>
+        <div v-if="movie.collapse?.duration?.[0]" class="movie-card__duration"> {{ formatDuration(movie.collapse.duration[0]) }}</div>
+        <div class="movie-card__title" @click="moveToFilm(movie)">
+          {{ movie.title }}
+        </div>
         <div class="movie-card__year-genre">{{ movie.year }}, {{ movie.genres.join(', ') }}</div>
-        <div class="movie-card__directors">Режиссёр: {{ movie.directors.join(', ') }}</div>
-        <div class="movie-card__actors"><span>Актёры:</span> {{ movie.actors.slice(0, 3).join(', ') }}</div>
+        <div class="movie-card__directors">
+          Режиссёр: {{ movie.directors ? movie.directors.join(', ') : 'Неизвестен' }}
+        </div>
+        <div class="movie-card__actors">
+          <span>Актёры:</span> {{ movie.actors ? movie.actors.join(', ') : 'Неизвестно' }}
+        </div>
         <div class="movie-card__about">{{ movie.description }}</div>
       </div>
     </div>
@@ -106,6 +139,7 @@ const loading = ref(true);
   color: $white;
   line-height: 36px;
   margin-bottom: 12px;
+  cursor: pointer;
 }
 
 .movie-card__year-genre {
