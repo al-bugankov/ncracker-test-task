@@ -17,6 +17,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  box-shadow: 0 4px 20px $black;
+  position: relative;
 }
 
 .header__text {
